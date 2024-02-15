@@ -70,7 +70,7 @@ contract ERC20 {
         require(_spender != msg.sender, "Spender cannot increase the allowance");
         require(tokenAllowance[msg.sender][_spender] > 0, "Allowance should be approved");
         require(_value > 0, "Allowance value must be greater than zero");
-        require(balance[msg.sender] >= tokenAllowance[msg.sender][_spender] + _value, "Insufficient Balance"); //something missimg
+        require(balance[msg.sender] >= tokenAllowance[msg.sender][_spender] + _value, "Insufficient Balance"); 
         tokenAllowance[msg.sender][_spender] += _value;
         emit Approval(msg.sender, _spender, tokenAllowance[msg.sender][_spender]);
         return true;
