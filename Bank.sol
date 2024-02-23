@@ -144,7 +144,7 @@ contract bank2{
         require(block.timestamp >= fixDeposit[msg.sender].startTime + fixDeposit[msg.sender].duration, "Deposit period has not elapsed");
         uint depositInterest = (fixDeposit[msg.sender].amount * depositInterestRate * fixDeposit[msg.sender].duration) / (100 * 365 days);
         uint totalReturn = fixDeposit[msg.sender].amount + depositInterest;
-        require(adminInvesment >= depositInterest, "Admin's invsetment should have enough balance to pay the interest");
+        require(adminInvesment >= depositInterest, "Admins invsetment should have enough balance to pay the interest");
         adminInvesment -= depositInterest;
         payable(msg.sender).transfer(totalReturn);
         fixDeposit[msg.sender].amount -= fixDeposit[msg.sender].amount;
