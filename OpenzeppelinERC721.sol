@@ -2,7 +2,6 @@
 pragma solidity >=0.6.12 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MyERC721 is ERC721 {
     uint256 private _tokenIdCounter = 0;
