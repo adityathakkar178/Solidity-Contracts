@@ -3,7 +3,7 @@ pragma solidity >=0.6.12 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract MyERC721 is ERC721 {
+contract ERC721 is ERC721 {
     uint256 private _tokenIdCounter = 0;
     string private _baseUri;
     mapping (uint256 => string) private _tokenURIs; 
