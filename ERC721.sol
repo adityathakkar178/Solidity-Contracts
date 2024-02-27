@@ -13,13 +13,16 @@ contract ERC721 is  ERC165{
     mapping (address => mapping (address => bool)) private _approvedForAll;
     mapping (uint256 => string) private _tokenURIs; 
     string private _baseUri;
+    uint256 private _tokenIdCounter = 0;
 
     event Transfer(address indexed from, address indexed to, uint256 _tokenId);
     event Approval(address indexed owner, address indexed approve, uint256 _tokenId);
     event ApprovalForAll(address indexed owner, address operator, bool _approve);
     
-    function mint(string memory _tokenName, string memory _tokenURI, uint256 _tokenId) public {
-        require(bytes(_tokenName).length > 0 && bytes(_tokenURI).length > 0 && _tokenId > 0, "Token name, Token id, Token URI can not be empty");
+    function mint(string memory _tokenName, string memory _tokenURI) public {
+        require(bytes(_tokenName).length > 0 && bytes(_tokenURI).length > 0, "Token name, Token id, Token URI can not be empty");
+        _tokenIdCounter++;
+        uint256 _tokenId = _tokenIdCounter;
         require(owner[_tokenId] == address(0), "Token Id already exists");
         owner[_tokenId] = msg.sender;
         balance[msg.sender]++;
@@ -69,9 +72,7 @@ contract ERC721 is  ERC165{
     }
 
     function transferFrom(address _from, address _to, uint256 _tokenId) public {
-        require(_approved[_tokenId] == msg.sender || _approvedForAll[_from][msg.sender], "Operator not approved for token ID");
         require(_to != _from, "You can not transfer tokens to your own account");
-        require(_to != msg.sender, "Operator can not transfer to his own account");
         owner[_tokenId] = _to;
         balance[_from]--;
         balance[_to]++;
