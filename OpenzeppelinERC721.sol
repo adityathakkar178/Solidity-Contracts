@@ -8,7 +8,6 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     uint256 private _tokenIdCounter = 0;
     string private _baseUri;
     mapping (uint256 => string) private _tokenURIs; 
-    mapping(uint256 => bool) private _tokenExists;
 
     constructor() ERC721("My Token", "MTK") {}
 
@@ -18,7 +17,6 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         uint256 tokenId = _tokenIdCounter;
         _mint(msg.sender, tokenId);
         _setTokenURI(tokenId, _tokenURI);
-        _tokenExists[tokenId] = true;
     }
 
     function setBaseURI(string memory _baseURI) public {
