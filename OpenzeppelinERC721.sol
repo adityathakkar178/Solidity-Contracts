@@ -8,6 +8,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     uint256 private _tokenIdCounter = 0;
     string private _baseUri;
     mapping (uint256 => string) private _tokenURIs; 
+    mapping(uint256 => bool) private _tokenExists;
 
     constructor() ERC721("My Token", "MTK") {}
 
@@ -17,22 +18,23 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         uint256 tokenId = _tokenIdCounter;
         _mint(msg.sender, tokenId);
         _setTokenURI(tokenId, _tokenURI);
+        _tokenExists[tokenId] = true;
     }
 
     function setBaseURI(string memory _baseURI) public {
         _baseUri = _baseURI;
     }
 
-    function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
-        return super.tokenURI(tokenId);
+    function tokenURI(uint256 _tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
+        return super.tokenURI(_tokenId);
     }
 
-    function getTokenURI(uint256 _tokenId) public view returns(string memory) {
+    function getURI(uint256 _tokenId) public view returns(string memory) {
         require(ownerOf(_tokenId) != address(0), "Token Id does not exist");
-        return string(abi.encodePacked(_baseUri, _tokenURIs[_tokenId]));
+        return string(abi.encodePacked(_baseUri, tokenURI(_tokenId)));
     } 
     
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool){
-        return super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 _interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool){
+        return super.supportsInterface(_interfaceId);
     }
 }
