@@ -5,7 +5,7 @@ interface ERC165 {
     function supportsInterface(bytes4 interfaceId) external pure returns (bool);
 }
 
-contract ERC721 is  ERC165{
+contract ERC721 is ERC165{
     mapping (address => uint256) public  balance;
     mapping (string => uint256) public tokens;
     mapping (uint256 => address) public owner;
