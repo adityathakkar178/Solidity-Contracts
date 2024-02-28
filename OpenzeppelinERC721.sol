@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 contract MyERC721 is ERC721, ERC721URIStorage{
     uint256 private _tokenIdCounter = 0;
     string private _baseUri;
+    bool private _baseURIset;
     mapping (string => bool) private _tokenURIs;
     
     constructor() ERC721("My Token", "MTK") {}
@@ -26,7 +27,9 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     }
 
     function setBaseURI(string memory _baseTokenURI) public {
+        require(!_baseURIset, "Base URI is already set");
         _baseUri = _baseTokenURI;
+        _baseURIset = true;
     } 
 
     function tokenURI(uint256 _tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
