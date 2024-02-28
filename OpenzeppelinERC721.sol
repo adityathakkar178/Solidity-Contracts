@@ -17,7 +17,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     }
 
     address private _admin;
-    uint256 private _tokenIdCounter = 0;
+    uint256 private _tokenIdCounter;
     uint256 private _adminCommission;
     uint256 private _commissionRate;
     uint256 private _mintCommission;
@@ -35,13 +35,13 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         require(bytes(_tokenName).length > 0 && bytes(_tokenURI).length > 0, "Token name, Token id, Token URI can not be empty");
         require(!_tokenURIs[_tokenURI], "Token URI already exists");
         require(msg.value == _mintCommission, "Incorrect amount sent");
+        require(_royaltyPercentage > 0 && _royaltyPercentage <= 10, "Owner can take royalty between 1 to 10 percent");
         _tokenURIs[_tokenURI] = true;
         _tokenIdCounter++;
         uint256 tokenId = _tokenIdCounter;
         _mint(msg.sender, tokenId);
         _setTokenURI(tokenId, _tokenURI);
         _adminCommission += _mintCommission;
-        require(_royaltyPercentage > 0 && _royaltyPercentage <= 10, "Owner can take royalty between 1 to 10 percent");
         creator[tokenId] = Creatores(msg.sender, _royaltyPercentage);
     }
 
@@ -51,6 +51,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
 
     function sell(uint256 _tokenId, uint256 _price) public {
         require(ownerOf(_tokenId) == msg.sender, "You are not the owner of the token");
+        require(_price > 0, "Price should be greater ");
         saleToken[_tokenId] = SaleAccount(msg.sender, _tokenId, _price);
     }
 
