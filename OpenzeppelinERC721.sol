@@ -41,6 +41,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         _mint(msg.sender, tokenId);
         _setTokenURI(tokenId, _tokenURI);
         _adminCommission += _mintCommission;
+        require(_royaltyPercentage > 0 && _royaltyPercentage <= 10, "Owner can take royalty between 1 to 10 percent");
         creator[tokenId] = Creatores(msg.sender, _royaltyPercentage);
     }
 
