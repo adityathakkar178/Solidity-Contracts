@@ -7,10 +7,11 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 contract MyERC721 is ERC721, ERC721URIStorage{
     uint256 private _tokenIdCounter = 0;
     string private _baseUri;
-    bool private _baseURIset;
     mapping (string => bool) private _tokenURIs;
     
-    constructor() ERC721("My Token", "MTK") {}
+    constructor(string memory _baseTokenURI) ERC721("My Token", "MTK") {
+        _baseUri = _baseTokenURI;
+    }
 
     function mint(string memory _tokenName, string memory _tokenURI) public {
         require(bytes(_tokenName).length > 0 && bytes(_tokenURI).length > 0, "Token name, Token id, Token URI can not be empty");
@@ -25,12 +26,6 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     function _baseURI() internal view override returns(string memory) {
         return _baseUri;
     }
-
-    function setBaseURI(string memory _baseTokenURI) public {
-        require(!_baseURIset, "Base URI is already set");
-        _baseUri = _baseTokenURI;
-        _baseURIset = true;
-    } 
 
     function tokenURI(uint256 _tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
         return super.tokenURI(_tokenId);
