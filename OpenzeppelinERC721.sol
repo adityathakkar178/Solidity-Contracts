@@ -107,7 +107,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         auctions[_tokenId].highestBidder = msg.sender;
     } 
 
-    function transferAfterAuction(uint256 _tokenId) public {
+    function acceptBid(uint256 _tokenId) public {
         require(block.timestamp >= auctions[_tokenId].auctionEndTime, "Auction has not ended yet");
         require(msg.sender == auctions[_tokenId].seller, "Only seller can call this function");
         _transfer(auctions[_tokenId].seller, auctions[_tokenId].highestBidder, _tokenId);
