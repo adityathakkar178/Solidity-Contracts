@@ -97,8 +97,8 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         require(msg.sender != auctions[_tokenId].seller, "Seller can not place bid");
         uint256 currentHighestBid = auctions[_tokenId].highestBid;
         address currentHighestBidder = auctions[_tokenId].highestBidder;
-        if (auctions[_tokenId].highestBid > 0) {
-            require(msg.value > auctions[_tokenId].highestBid, "Bid must be greater than currrent highest bid");
+        if (currentHighestBid > 0) {
+            require(msg.value > currentHighestBid, "Bid must be greater than currrent highest bid");
             payable(currentHighestBidder).transfer(currentHighestBid);
         } else {
             require(msg.value > auctions[_tokenId].startingPrice, "Bid value must br freater than zero");
@@ -127,6 +127,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     function rejectBid(uint256 _tokenId) public {
         require(block.timestamp >= auctions[_tokenId].auctionEndTime, "Auction has not ended yet");
         require(msg.sender == auctions[_tokenId].seller, "Only seller can reject the bid");
+        require(auctions[_tokenId].highestBid > 0, "There is no bid to reject");
         uint256 currentHighestBid = auctions[_tokenId].highestBid;
         address currentHighestBidder = auctions[_tokenId].highestBidder;
         auctions[_tokenId].highestBid = 0;
