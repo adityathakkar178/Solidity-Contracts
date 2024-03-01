@@ -98,6 +98,14 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         _adminCommission += adminCommission;
         delete saleToken[_tokenId];
     }
+
+    function withdraw() public {
+        require(msg.sender == _admin, "Only Admin can withdraw");
+        uint256 commission = _adminCommission;
+        require(commission > 0, "No commission to withdraw");
+        _adminCommission = 0;
+        payable(_admin).transfer(commission);
+    }
     // Buy and Sell ends here
 
     // Unlimited Auction starts here
