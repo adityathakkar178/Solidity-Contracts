@@ -74,7 +74,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         return super.tokenURI(_tokenId);
     }
 
-    // Buy and Sell start here
+    // Buy and Sell starts here
     function sell(uint256 _tokenId, uint256 _price) public {
         require(ownerOf(_tokenId) == msg.sender, "You are not the owner of the token");
         require(_price > 0, "Price should be greater than zero");
@@ -100,7 +100,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     }
     // Buy and Sell ends here
 
-    // Unlimited Auction start here
+    // Unlimited Auction starts here
     function startUnlimitedAuction(uint256 _tokenId, uint256 _startingPrice) public {
         require(ownerOf(_tokenId) == msg.sender, "You are not the owner of the token");
         require(_startingPrice > 0, "Price should be gretaer than zero");
@@ -177,7 +177,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         delete bids[_tokenId];
         delete unlimtedAuctions[_tokenId];
     }
-    //Unlimeted Auction ended here
+    //Unlimeted Auction endes here
 
     //Timed Auction starts here
     function startTimedAuction(uint256 _tokenId, uint256 _startingPrice, uint256 _auctionEndTime) public {
