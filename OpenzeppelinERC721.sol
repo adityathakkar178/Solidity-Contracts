@@ -72,6 +72,14 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         _adminCommission += adminCommission;
         delete saleToken[_tokenId];
     }
+
+    function withdraw() public {
+        require(msg.sender == _admin, "Only Admin can withdraw");
+        uint256 commission = _adminCommission;
+        require(commission > 0, "No commission to withdraw");
+        _adminCommission = 0;
+        payable(_admin).transfer(commission);
+    }
     
     function supportsInterface(bytes4 _interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool){
         return super.supportsInterface(_interfaceId);
