@@ -16,16 +16,6 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         uint256 price;
     }
 
-    struct Auction {
-        address seller;
-        uint256 tokenId;
-        uint256 startingPrice;
-        uint256 highestBid;
-        address highestBidder;
-        uint256 auctionStartTime;
-        uint256 auctionEndTime;
-    }
-
     address private _admin;
     uint256 private _tokenIdCounter;
     uint256 private _adminCommission;
@@ -34,7 +24,6 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     mapping (string => bool) private _tokenURIs;
     mapping (uint256 => Creatores) public creator;
     mapping (uint256 => SaleAccount) public saleToken;
-    mapping (uint256 => Auction) public auctions;
     
     constructor(uint256 _price, uint256 _adminCommissionRate) ERC721("My Token", "MTK") {
         _admin = msg.sender;
@@ -82,68 +71,6 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         payable(saleToken[_tokenId].seller).transfer(remainingAmount);
         _adminCommission += adminCommission;
         delete saleToken[_tokenId];
-    }
-
-    function startAuction(uint256 _tokenId, uint256 _startingPrice, uint256 _auctionEndTime) public {
-        require(ownerOf(_tokenId) == msg.sender, "You are not the owner of the token");
-        require(_startingPrice > 0, "Price should be gretaer than zero");
-        require(_auctionEndTime > block.timestamp, "Auction end time must be greater than start time");
-        auctions[_tokenId] = Auction(msg.sender, _tokenId, _startingPrice, 0, address(0), block.timestamp, _auctionEndTime);
-    }
-
-   function placeBid(uint256 _tokenId) public payable {
-        require(block.timestamp <= auctions[_tokenId].auctionEndTime, "Auction has ended");
-        require(msg.sender != auctions[_tokenId].highestBidder, "You already have the highest bid");
-        require(msg.sender != auctions[_tokenId].seller, "Seller can not place bid");
-        uint256 currentHighestBid = auctions[_tokenId].highestBid;
-        address currentHighestBidder = auctions[_tokenId].highestBidder;
-        if (currentHighestBid > 0) {
-            require(msg.value > currentHighestBid, "Bid must be greater than currrent highest bid");
-            payable(currentHighestBidder).transfer(currentHighestBid);
-        } else {
-            require(msg.value > auctions[_tokenId].startingPrice, "Bid value must br freater than zero");
-        }
-        auctions[_tokenId].highestBid = msg.value;
-        auctions[_tokenId].highestBidder = msg.sender;
-    } 
-
-    function acceptBid(uint256 _tokenId) public {
-        require(block.timestamp >= auctions[_tokenId].auctionEndTime, "Auction has not ended yet");
-        require(msg.sender == auctions[_tokenId].seller, "Only seller can call this function");
-        _transfer(auctions[_tokenId].seller, auctions[_tokenId].highestBidder, _tokenId);
-        payable(auctions[_tokenId].seller).transfer(auctions[_tokenId].highestBid);
-        delete auctions[_tokenId];
-    }
-
-    function withdrawBid(uint256 _tokenId) public {
-        require(auctions[_tokenId].highestBidder == msg.sender, "You have not placed the highest bid");
-        require(block.timestamp < auctions[_tokenId].auctionEndTime, "Auction has ended");
-        uint256 bidderAmount = auctions[_tokenId].highestBid;
-        auctions[_tokenId].highestBid = 0;
-        auctions[_tokenId].highestBidder = address(0);
-        payable(msg.sender).transfer(bidderAmount);
-    }
-
-    function rejectBid(uint256 _tokenId) public {
-        require(block.timestamp >= auctions[_tokenId].auctionEndTime, "Auction has not ended yet");
-        require(msg.sender == auctions[_tokenId].seller, "Only seller can reject the bid");
-        require(auctions[_tokenId].highestBid > 0, "There is no bid to reject");
-        uint256 currentHighestBid = auctions[_tokenId].highestBid;
-        address currentHighestBidder = auctions[_tokenId].highestBidder;
-        auctions[_tokenId].highestBid = 0;
-        auctions[_tokenId].highestBidder = address(0);
-        payable(currentHighestBidder).transfer(currentHighestBid);
-    }
-
-    function withdrawAuction(uint256 _tokenId) public {
-        require(block.timestamp < auctions[_tokenId].auctionEndTime, "Auction has ended");
-        require(msg.sender == auctions[_tokenId].seller, "Only seller can withdraw auction");
-        uint256 currentHighestBid = auctions[_tokenId].highestBid;
-        address currentHighestBidder = auctions[_tokenId].highestBidder;
-        if (currentHighestBidder != address(0)) {
-            payable(currentHighestBidder).transfer(currentHighestBid);
-        }
-        delete auctions[_tokenId];
     }
     
     function supportsInterface(bytes4 _interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool){
