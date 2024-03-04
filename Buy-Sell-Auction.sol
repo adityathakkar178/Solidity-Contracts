@@ -20,7 +20,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         address seller;
         uint256 tokenId;
         uint256 startingPrice;
-        uint256 auctionStartTime;
+        uint256 unlimitedAuctionStartTime;
     }
 
     struct TimedAuction {
@@ -74,7 +74,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         return super.tokenURI(_tokenId);
     }
 
-    // Buy and Sell starts here
+    // Buy and Sell start here
     function sell(uint256 _tokenId, uint256 _price) public {
         require(ownerOf(_tokenId) == msg.sender, "You are not the owner of the token");
         require(_price > 0, "Price should be greater than zero");
@@ -108,7 +108,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     }
     // Buy and Sell ends here
 
-    // Unlimited Auction starts here
+    // Unlimited Auction start here
     function startUnlimitedAuction(uint256 _tokenId, uint256 _startingPrice) public {
         require(ownerOf(_tokenId) == msg.sender, "You are not the owner of the token");
         require(_startingPrice > 0, "Price should be gretaer than zero");
@@ -116,7 +116,6 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     }
 
    function placeBid(uint256 _tokenId) public payable {
-        require(unlimtedAuctions[_tokenId].auctionStartTime > 0, "The auction for this token has not started yet");
         require(msg.sender != unlimtedAuctions[_tokenId].seller, "Seller can not place bid");
         require(msg.value > unlimtedAuctions[_tokenId].startingPrice, "Bid value must be greater than starting price");
         Bid memory newBid = Bid(msg.sender, msg.value);
@@ -185,7 +184,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         delete bids[_tokenId];
         delete unlimtedAuctions[_tokenId];
     }
-    //Unlimeted Auction endes here
+    //Unlimeted Auction ended here
 
     //Timed Auction starts here
     function startTimedAuction(uint256 _tokenId, uint256 _startingPrice, uint256 _auctionEndTime) public {
@@ -196,7 +195,6 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     }
 
     function placeTimedBid(uint256 _tokenId) public payable {
-        require(timedAuctions[_tokenId].auctionStartTime > 0 && block.timestamp <= timedAuctions[_tokenId].auctionEndTime, "Auction has ended");
         require(block.timestamp <= timedAuctions[_tokenId].auctionEndTime, "Auction has ended");
         require(msg.sender != timedAuctions[_tokenId].highestBidder, "You already have the highest bid");
         require(msg.sender != timedAuctions[_tokenId].seller, "Seller can not place bid");
@@ -213,7 +211,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     } 
 
     function claimBid(uint256 _tokenId) public {
-        require(block.timestamp >= timedAuctions[_tokenId].auctionEndTime, "Auction has not ended yet");
+        require(block.timestamp >= timedAuctions[_tokenId].auctionEndTime, "Auction has ended");
         require(msg.sender == timedAuctions[_tokenId].highestBidder, "Only highest bidder can calim bid");
         _transfer(timedAuctions[_tokenId].seller, timedAuctions[_tokenId].highestBidder, _tokenId);
         payable(timedAuctions[_tokenId].seller).transfer(timedAuctions[_tokenId].highestBid);
@@ -222,8 +220,8 @@ contract MyERC721 is ERC721, ERC721URIStorage{
 
     function cancleAuction(uint256 _tokenId) public {
         require(block.timestamp < timedAuctions[_tokenId].auctionEndTime, "Auction has ended");
-        require(timedAuctions[_tokenId].highestBidder == address(0), "Can not withdraw Auction once bid is placed");
         require(msg.sender == timedAuctions[_tokenId].seller, "Only seller can withdraw auction");
+        require(timedAuctions[_tokenId].highestBidder == address(0), "Can not withdraw Auction once bid is placed");
         delete timedAuctions[_tokenId];
     }
     // Timed Auction ends here
