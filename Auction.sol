@@ -140,7 +140,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
     }
 
     function placeTimedBid(uint256 _tokenId) public payable {
-        require(timedAuctions[_tokenId].auctionStartTime > 0 && block.timestamp <= timedAuctions[_tokenId].auctionEndTime, "Auction has ended");
+        require(timedAuctions[_tokenId].auctionStartTime > 0 && block.timestamp <= timedAuctions[_tokenId].auctionEndTime, "Auction is not active");
         require(msg.sender != timedAuctions[_tokenId].highestBidder, "You already have the highest bid");
         require(msg.sender != timedAuctions[_tokenId].seller, "Seller can not place bid");
         uint256 currentHighestBid = timedAuctions[_tokenId].highestBid;
