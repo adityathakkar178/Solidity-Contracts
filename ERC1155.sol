@@ -27,6 +27,7 @@ contract ERC1155 {
 
 
     function getTokenURI(uint256 _tokenId) public view returns(string memory) {
+        require(_tokenId <= _tokenIdCounter, "Invalid token id");
         return _tokenURIs[_tokenId];
     }
 
