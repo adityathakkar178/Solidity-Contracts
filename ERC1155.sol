@@ -25,6 +25,12 @@ contract ERC1155 {
         emit URI(_tokenURI, id);
     }
 
+    function mintToExisitingTokens(uint256 _tokenId, uint256 _amount) public {
+        require(_balance[_tokenId][msg.sender] > 0, "You are not the owner of this token");
+        require(_amount > 0, "Amount must be greater tha zero");
+        _balance[_tokenId][msg.sender] += _amount;
+    }
+
     function getTokenURI(uint256 _tokenId) public view returns(string memory) {
         return _tokenURIs[_tokenId];
     }
