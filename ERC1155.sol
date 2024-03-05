@@ -6,6 +6,7 @@ contract ERC1155 {
     mapping (uint256 => mapping (address => uint256)) private _balance;
     mapping (address => mapping (address => bool)) private _approve;
     mapping (uint256 => string) private _tokenURIs;
+    mapping (uint256 => address) private _creator;
     mapping (string => bool) private _uris;
 
     event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
@@ -22,11 +23,12 @@ contract ERC1155 {
         _balance[id][msg.sender] = _amount;
         _tokenURIs[id] = _tokenURI;
         _uris[_tokenURI] = true;
+        _creator[id] = msg.sender;
         emit URI(_tokenURI, id);
     }
 
     function mintToExisitingTokens(uint256 _tokenId, uint256 _amount) public {
-        require(_balance[_tokenId][msg.sender] > 0, "You are not the owner of this token");
+        require(msg.sender == _creator[_tokenId], "You are not the orginal creator of this token");
         require(_amount > 0, "Amount must be greater tha zero");
         _balance[_tokenId][msg.sender] += _amount;
     }
