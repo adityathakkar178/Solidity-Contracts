@@ -60,7 +60,9 @@ contract ERC1155 {
     }
 
     function safeTrasferFrom(address _from, address _to, uint256 _id, uint256 _value) public {
-        require(isApprovedForAll(_from, msg.sender), "You are not approved to transfer this tokens");
+        if (msg.sender != _from) {
+            require(isApprovedForAll(_from, msg.sender), "You are not approved to transfer this tokens");
+        }
         require(_to != _from, "You can not transfer to your own account");
         require(_to != msg.sender, "Operator can not send token to his own account");
         require(_balance[_id][_from] >= _value, "Insufficient balance");
@@ -70,7 +72,9 @@ contract ERC1155 {
     }
 
     function safeBatchTransferFrom(address _from, address _to, uint256[] memory _ids, uint256[] memory _values) public {
-        require(isApprovedForAll(_from, msg.sender), "You are not approved to transfer this tokens");
+        if (msg.sender != _from) {
+            require(isApprovedForAll(_from, msg.sender), "You are not approved to transfer this tokens");
+        }
         require(_to != _from, "You can not transfer to your own account");
         require(_to != msg.sender, "Operator can not send token to his own account");
         require(_ids.length == _values.length, "Length of ids and values must match");
