@@ -25,11 +25,17 @@ contract ERC1155 {
         emit URI(_tokenURI, id);
     }
 
+
+    function getTokenURI(uint256 _tokenId) public view returns(string memory) {
+        return _tokenURIs[_tokenId];
+    }
+
     function balanceOf(address _owner, uint256 _id) public view returns(uint256) {
         return _balance[_id][_owner];
     }
 
     function balanceOfBatch(address[] memory _owners, uint256[] memory _ids) public view returns(uint256[] memory) {
+        require(_owners.length == _ids.length, "Length of owners and ids should be equal");
         uint256[] memory balances = new uint256[](_owners.length);
         for (uint256 i = 0; i < _owners.length; i++) {
             balances[i] = balanceOf(_owners[i], _ids[i]);
