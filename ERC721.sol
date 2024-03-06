@@ -72,7 +72,9 @@ contract ERC721 is ERC165{
     }
 
     function transferFrom(address _from, address _to, uint256 _tokenId) public {
+        require(msg.sender == _from || _approved[_tokenId] == msg.sender || _approvedForAll[_from][msg.sender], "Operator not approved for token ID");
         require(_to != _from, "You can not transfer tokens to your own account");
+        require(_to != msg.sender, "Operator can not transfer to his own account");
         owner[_tokenId] = _to;
         balance[_from]--;
         balance[_to]++;
