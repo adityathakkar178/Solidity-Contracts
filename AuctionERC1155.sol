@@ -12,6 +12,17 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
         uint256 unlimitedAuctionStartTime;
     }
 
+    struct TimedAuction {
+        address seller;
+        uint256 tokenId;
+        uint256 amount;
+        uint256 startingPrice;
+        uint256 highestBid;
+        address highestBidder;
+        uint256 auctionStartingTime;
+        uint256 auctionEndTime;
+    }
+
     struct Bid {
         address bidder;
         uint256 biddingPrice;
@@ -22,6 +33,7 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
     mapping (string => bool) private _uris;
     mapping (uint256 => address) private _creator;
     mapping (uint256 => Auction[]) public unlimitedAuctions;
+    mapping (uint256 => TimedAuction[]) public timedAuctions;
     mapping (uint256 => mapping(uint256 => Bid[])) public bidders; 
 
     constructor() ERC1155("") {
@@ -50,16 +62,17 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
         return super.uri(tokenId);
     }
 
+    // unlimited auction starts here
     function startUnlimitedAuction(uint256 _tokenId, uint256 _amount, uint256 _startingPrice) public {
         require(_amount > 0 && _startingPrice > 0, "Amount and starting price must be greate than zero");
         require(balanceOf(msg.sender, _tokenId) >= _amount, "Insufficent balance");
         unlimitedAuctions[_tokenId].push(Auction(msg.sender, _tokenId, _amount, _startingPrice, block.timestamp));
     }
 
-    function placeBid(uint256 _tokenId, uint256 _seller) public payable {
-        require(msg.sender != unlimitedAuctions[_tokenId][_seller].seller, "Seller can not place bid");
-        require(msg.value > unlimitedAuctions[_tokenId][_seller].startingPrice, "Bidding price must be greater than starting price");
-        bidders[_tokenId][_seller].push(Bid(msg.sender, msg.value));
+    function placeBid(uint256 _tokenId, uint256 _auction) public payable {
+        require(msg.sender != unlimitedAuctions[_tokenId][_auction].seller, "Seller can not place bid");
+        require(msg.value > unlimitedAuctions[_tokenId][_auction].startingPrice, "Bidding price must be greater than starting price");
+        bidders[_tokenId][_auction].push(Bid(msg.sender, msg.value));
     }
 
     function acceptBid(uint256 _tokenId, uint256 _auction, uint256 _bidder) public {
@@ -94,9 +107,58 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
     }
 
     function rejectBid(uint256 _tokenId, uint256 _auction, uint256 _bid) public {
-        Auction memory selectAuction = unlimitedAuctions[_tokenId][_auction];
-        require(selectAuction.seller == msg.sender, "Only seller can reject the bid");
+        require(msg.sender == unlimitedAuctions[_tokenId][_auction].seller, "Only seller can reject the bid");
+        require(_bid < bidders[_tokenId][_bid].length, "Invalid bidder");
         payable(bidders[_tokenId][_auction][_bid].bidder).transfer(bidders[_tokenId][_auction][_bid].biddingPrice);
         delete bidders[_tokenId][_auction][_bid];
     }
+
+    function withdrawAuction(uint256 _tokenId, uint256 _auction) public {
+        require(msg.sender == unlimitedAuctions[_tokenId][_auction].seller, "Only seller can withdraw auction");
+        for (uint256 i = 0; i < bidders[_tokenId][_auction].length; i++) {
+            payable(bidders[_tokenId][_auction][i].bidder).transfer(bidders[_tokenId][_auction][i].biddingPrice);
+        }
+        delete unlimitedAuctions[_tokenId][_auction];
+        delete bidders[_tokenId][_auction];
+    }
+    // Unlimited auction ends here
+
+    // Timed auction starts here 
+    function startTimedAuction(uint256 _tokenId, uint256 _amount, uint256 _startingPrice, uint256 _auctionEndTime) public {
+        require(_amount > 0 && _startingPrice > 0, "Amount and starting price must be greater than zero");
+        require(balanceOf(msg.sender, _tokenId) >= _amount, "Insufficient balance");
+        timedAuctions[_tokenId].push(TimedAuction(msg.sender, _tokenId, _amount, _startingPrice, 0, address(0), block.timestamp, _auctionEndTime));
+    }
+
+    function placeTimedBid(uint256 _tokenId, uint _auction) public payable{
+        require(block.timestamp <= timedAuctions[_tokenId][_auction].auctionEndTime, "Auction has ended");
+        require(msg.sender != timedAuctions[_tokenId][_auction].seller, "Seller can not place bid");
+        require(msg.sender != timedAuctions[_tokenId][_auction].highestBidder, "You already have highest bid");
+        address currentHighestBidder = timedAuctions[_tokenId][_auction].highestBidder;
+        uint256 currentHighestBid = timedAuctions[_tokenId][_auction].highestBid;
+        if (currentHighestBid > 0) {
+            require(msg.value > currentHighestBid, "Bid must be greater than previous bid");
+            payable(currentHighestBidder).transfer(currentHighestBid);
+        } else {
+            require(msg.value > timedAuctions[_tokenId][_auction].startingPrice, "Bid must be greater than the starting price");
+        }
+        timedAuctions[_tokenId][_auction].highestBid = msg.value;
+        timedAuctions[_tokenId][_auction].highestBidder = msg.sender;
+    }
+
+    function claimFd(uint256 _tokenId, uint256 _auction) public {
+        require(block.timestamp >= timedAuctions[_tokenId][_auction].auctionEndTime, "Auction ahs not ended yet");
+        require(msg.sender == timedAuctions[_tokenId][_auction].highestBidder, "Highest bidder can claim the bid");
+        _safeTransferFrom(timedAuctions[_tokenId][_auction].seller, timedAuctions[_tokenId][_auction].highestBidder, _tokenId, timedAuctions[_tokenId][_auction].amount, "");
+       payable(timedAuctions[_tokenId][_auction].seller).transfer(timedAuctions[_tokenId][_auction].highestBid);
+       delete timedAuctions[_tokenId][_auction]; 
+    }
+
+    function cancelAuction(uint256 _tokenId, uint256 _auction) public {
+        require(block.timestamp < timeedAuction[_tokenId][_auction].auctionEndTime, "Auctio has ended");
+        require(msg.sender == timedAuction[_tokenId][_auction].seller, "Only seller can cancel the auction");
+        require(timedAuctions[_tokenId][_auction].highestBidder == address(0), "Can not withdraw auction once bid has placed");
+        delete timedAuctions[_tokenId][_auction];
+    }
+    // Timed auction ends here
 }
