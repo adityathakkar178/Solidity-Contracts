@@ -67,17 +67,6 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         bids[_tokenId].push(newBid);
     } 
 
-    function getBidders(uint256 _tokenId) public view returns (address[] memory, uint256[] memory) {
-        uint256 numBids = bids[_tokenId].length;
-        address[] memory bidders = new address[](numBids);
-        uint256[] memory amounts = new uint256[](numBids);
-        for (uint256 i = 0; i < numBids; i++) {
-            bidders[i] = bids[_tokenId][i].bidder;
-            amounts[i] = bids[_tokenId][i].amount;
-        }
-        return (bidders, amounts);
-    }
-
     function acceptBid(uint256 _tokenId, uint256 _bidder) public {
         require(msg.sender == unlimtedAuctions[_tokenId].seller, "Only seller can call this function");
         require(_bidder < bids[_tokenId].length, "Invalid bidder");
