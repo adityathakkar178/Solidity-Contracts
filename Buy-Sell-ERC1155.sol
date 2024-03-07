@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.6.12 <0.9.0;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
 
-contract MyERC1155 is ERC1155{
+contract MyERC1155 is ERC1155, ERC1155URIStorage{
     struct Creators {
         address actualOwner;
         uint256 royaltyRate;
@@ -39,7 +40,7 @@ contract MyERC1155 is ERC1155{
         _tokenIdCounter++;
         uint256 id = _tokenIdCounter;
         _mint(msg.sender, id, _amount, "");
-        _setURI(_tokenURI);
+        _setURI(id, _tokenURI);
         _uris[_tokenURI] = true;
         _adminCommission += _mintCommission;
         creator[id] = Creators(msg.sender, _royaltyPercentage);
@@ -50,6 +51,10 @@ contract MyERC1155 is ERC1155{
         require(_amount > 0, "Amount must be gerater than zero");
         _mint(msg.sender, _tokenId, _amount, "");
     } 
+
+    function uri(uint256 tokenId) public view override(ERC1155URIStorage, ERC1155) returns (string memory) {
+        return super.uri(tokenId);
+    }
 
     function sell(uint256 _tokenId, uint256 _amount, uint256 _price) public {
         require(balanceOf(msg.sender, 1) >=_amount, "Insufficient balance");
