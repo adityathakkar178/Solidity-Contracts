@@ -62,10 +62,6 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
         saleToken[_tokenId].push(Seller(msg.sender, _tokenId, _amount, _price));
     }
 
-    function getSellers(uint256 _tokenId) public view returns(Seller[] memory) {
-        return saleToken[_tokenId];
-    }
-
     function buy(uint256 _tokenId, uint256 _seller) public payable{
         require(saleToken[_tokenId].length > 0, "Token not for sell");
         require(msg.value == saleToken[_tokenId][_seller].price, "Incorrect amount sent");
