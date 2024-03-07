@@ -1,87 +1,93 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.6.12 <0.9.0;
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-
-contract MyERC721 is ERC721, ERC721URIStorage{
-    struct Creatores {
+contract MyERC1155 is ERC1155, ERC1155URIStorage{
+    struct Creators {
         address actualOwner;
         uint256 royaltyRate;
     }
 
-    struct SaleAccount {
+    struct Seller {
         address seller;
         uint256 tokenId;
+        uint256 amount;
         uint256 price;
     }
 
     address private _admin;
     uint256 private _tokenIdCounter;
-    uint256 private _adminCommission;
-    uint256 private _commissionRate;
     uint256 private _mintCommission;
-    mapping (string => bool) private _tokenURIs;
-    mapping (uint256 => Creatores) public creator;
-    mapping (uint256 => SaleAccount) public saleToken;
-    
-    constructor(uint256 _price, uint256 _adminCommissionRate) ERC721("My Token", "MTK") {
+    uint256 private _adminCommission; 
+    uint256 private _commissionRate;
+    mapping (string => bool) private _uris;
+    mapping (uint256 => Creators) public creator;
+    mapping (uint256=>Seller[]) public saleToken;
+
+    constructor(uint256 _price, uint256 _adminCommissionRate) ERC1155("") {
         _admin = msg.sender;
         _mintCommission = _price;
         _commissionRate = _adminCommissionRate;
     }
 
-    function mint(string memory _tokenName, string memory _tokenURI, uint256 _royaltyPercentage) public payable {
-        require(bytes(_tokenName).length > 0 && bytes(_tokenURI).length > 0, "Token name, Token id, Token URI can not be empty");
-        require(!_tokenURIs[_tokenURI], "Token URI already exists");
-        require(msg.value == _mintCommission, "Incorrect amount sent");
+    function mint(uint256 _amount, uint256 _royaltyPercentage, string memory _tokenURI) public payable {
+        require(_amount > 0, "Amount must be grater than zero");
+        require(bytes(_tokenURI).length > 0, "TokenURI can not be empty");
+        require(!_uris[_tokenURI], "URI already exists");
+        require(msg.value == _mintCommission, "Incorrect price sent");
         require(_royaltyPercentage > 0 && _royaltyPercentage <= 10, "Owner can take royalty between 1 to 10 percent");
-        _tokenURIs[_tokenURI] = true;
         _tokenIdCounter++;
-        uint256 tokenId = _tokenIdCounter;
-        _mint(msg.sender, tokenId);
-        _setTokenURI(tokenId, _tokenURI);
+        uint256 id = _tokenIdCounter;
+        _mint(msg.sender, id, _amount, "");
+        _setURI(id, _tokenURI);
+        _uris[_tokenURI] = true;
         _adminCommission += _mintCommission;
-        creator[tokenId] = Creatores(msg.sender, _royaltyPercentage);
+        creator[id] = Creators(msg.sender, _royaltyPercentage);
     }
 
-    function tokenURI(uint256 _tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
-        return super.tokenURI(_tokenId);
+    function mintToExisiting(uint256 _tokenId, uint256 _amount) public{
+        require(msg.sender == creator[_tokenId].actualOwner, "You are not the original creator of this token");
+        require(_amount > 0, "Amount must be gerater than zero");
+        _mint(msg.sender, _tokenId, _amount, "");
+    } 
+
+    function uri(uint256 tokenId) public view override(ERC1155URIStorage, ERC1155) returns (string memory) {
+        return super.uri(tokenId);
     }
 
-    function sell(uint256 _tokenId, uint256 _price) public {
-        require(ownerOf(_tokenId) == msg.sender, "You are not the owner of the token");
-        require(_price > 0, "Price should be greater than zero");
-        saleToken[_tokenId] = SaleAccount(msg.sender, _tokenId, _price);
+    function sell(uint256 _tokenId, uint256 _amount, uint256 _price) public {
+        require(balanceOf(msg.sender, 1) >=_amount, "Insufficient balance");
+        require(_price > 0, "Price must be gerater than zero");
+        saleToken[_tokenId].push(Seller(msg.sender, _tokenId, _amount, _price));
     }
 
-    function buy(uint256 _tokenId) public payable {
-        require(saleToken[_tokenId].seller != address(0), "Token not for sale");
-        require(msg.value == saleToken[_tokenId].price, "Incorrect amount sent");
-        uint256 adminCommission = (saleToken[_tokenId].price * _commissionRate) / 100;
+    function getSellers(uint256 _tokenId) public view returns(Seller[] memory) {
+        return saleToken[_tokenId];
+    }
+
+    function buy(uint256 _tokenId, uint256 _seller) public payable{
+        require(saleToken[_tokenId].length > 0, "Token not for sell");
+        require(msg.value == saleToken[_tokenId][_seller].price, "Incorrect amount sent");
+        uint256 adminCommission = (saleToken[_tokenId][_seller].price * _commissionRate) / 100;
         uint256 royalty = 0;
-        if(saleToken[_tokenId].seller != creator[_tokenId].actualOwner) {
-            royalty = (saleToken[_tokenId].price * creator[_tokenId].royaltyRate) / 100;
+        if(saleToken[_tokenId][_seller].seller != creator[_tokenId].actualOwner) {
+            royalty = (saleToken[_tokenId][_seller].price * creator[_tokenId].royaltyRate) / 100;
         }
         uint256 remainingAmount = msg.value - (adminCommission + royalty);
-        _transfer(saleToken[_tokenId].seller, msg.sender, _tokenId);
+        _safeTransferFrom(saleToken[_tokenId][_seller].seller, msg.sender, _tokenId, saleToken[_tokenId][_seller].amount, "");
         if (royalty > 0) {
-            payable(creator[_tokenId].actualOwner).transfer(royalty);   
+            payable(creator[_tokenId].actualOwner).transfer(royalty);
         }
-        payable(saleToken[_tokenId].seller).transfer(remainingAmount);
+        payable(saleToken[_tokenId][_seller].seller).transfer(remainingAmount);
         _adminCommission += adminCommission;
-        delete saleToken[_tokenId];
+        delete saleToken[_tokenId][_seller];
     }
 
     function withdraw() public {
-        require(msg.sender == _admin, "Only Admin can withdraw");
+        require(msg.sender == _admin, "Only admin can withdraw");
         uint256 commission = _adminCommission;
         require(commission > 0, "No commission to withdraw");
-        _adminCommission = 0;
         payable(_admin).transfer(commission);
-    }
-    
-    function supportsInterface(bytes4 _interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool){
-        return super.supportsInterface(_interfaceId);
     }
 }
