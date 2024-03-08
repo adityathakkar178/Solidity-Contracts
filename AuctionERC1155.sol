@@ -105,7 +105,7 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
                 break;
             }
         }
-        require(found, "No bid to withdraw for this seller's auction");
+        require(found, "No bid to withdraw for this sellers auction");
     }
 
    function rejectBid(uint256 _tokenId, uint256 _bid) public {
