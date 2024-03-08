@@ -120,8 +120,6 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
         require(bidders[_tokenId][msg.sender].length == 0, "Cannot withdraw auction once bids have been placed");
         delete unlimitedAuctions[_tokenId][msg.sender];
     }
-
-
     // Unlimited auction ends here
 
     // Timed auction starts here 
