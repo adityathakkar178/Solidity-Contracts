@@ -146,7 +146,7 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
         timedAuctions[_tokenId][_auction].highestBidder = msg.sender;
     }
 
-    function claimFd(uint256 _tokenId, uint256 _auction) public {
+    function claimBid(uint256 _tokenId, uint256 _auction) public {
         require(block.timestamp >= timedAuctions[_tokenId][_auction].auctionEndTime, "Auction ahs not ended yet");
         require(msg.sender == timedAuctions[_tokenId][_auction].highestBidder, "Highest bidder can claim the bid");
         _safeTransferFrom(timedAuctions[_tokenId][_auction].seller, timedAuctions[_tokenId][_auction].highestBidder, _tokenId, timedAuctions[_tokenId][_auction].amount, "");
@@ -155,8 +155,8 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
     }
 
     function cancelAuction(uint256 _tokenId, uint256 _auction) public {
-        require(block.timestamp < timeedAuction[_tokenId][_auction].auctionEndTime, "Auctio has ended");
-        require(msg.sender == timedAuction[_tokenId][_auction].seller, "Only seller can cancel the auction");
+        require(block.timestamp < timedAuctions[_tokenId][_auction].auctionEndTime, "Auctio has ended");
+        require(msg.sender == timedAuctions[_tokenId][_auction].seller, "Only seller can cancel the auction");
         require(timedAuctions[_tokenId][_auction].highestBidder == address(0), "Can not withdraw auction once bid has placed");
         delete timedAuctions[_tokenId][_auction];
     }
