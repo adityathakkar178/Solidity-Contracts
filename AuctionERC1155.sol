@@ -75,27 +75,33 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
         bidders[_tokenId][_seller].push(Bid(msg.sender, msg.value));
     }
 
-    function acceptBid(uint256 _tokenId, uint256 _bid) public {
+    function acceptBid(uint256 _tokenId, address _bidder) public {
         Auction memory auction = unlimitedAuctions[_tokenId][msg.sender];
-        Bid memory selectedBid = bidders[_tokenId][msg.sender][_bid];
         require(msg.sender == auction.seller, "Only seller can accept a bid");
-        require(selectedBid.biddingPrice >= auction.startingPrice, "Bid price must be equal or greater than starting price");
-        safeTransferFrom(auction.seller, selectedBid.bidder, _tokenId, auction.amount, "");
-        payable(auction.seller).transfer(selectedBid.biddingPrice);
-        uint256 numBidders = bidders[_tokenId][msg.sender].length;
-        for (uint256 i = 0; i < numBidders; i++) {
-            if (i != _bid) {
-                Bid storage remainingBid = bidders[_tokenId][msg.sender][i];
-                payable(remainingBid.bidder).transfer(remainingBid.biddingPrice);
+        Bid[] memory bids = bidders[_tokenId][msg.sender];
+        uint256 numBids = bids.length;
+        for (uint256 i = 0; i < numBids; i++) {
+            if (bids[i].bidder == _bidder) {
+                Bid memory selectedBid = bids[i];
+                safeTransferFrom(auction.seller, selectedBid.bidder, _tokenId, auction.amount, "");
+                payable(auction.seller).transfer(selectedBid.biddingPrice);
+                for (uint256 j = 0; j < numBids; j++) {
+                    if (j != i) {
+                        Bid memory remainingBid = bids[j];
+                        payable(remainingBid.bidder).transfer(remainingBid.biddingPrice);
+                    }
+                }
+                delete bidders[_tokenId][msg.sender];
+                delete unlimitedAuctions[_tokenId][msg.sender];
+                break;
             }
         }
-        delete bidders[_tokenId][msg.sender];
-        delete unlimitedAuctions[_tokenId][msg.sender];
     }
 
     function withdrawBid(uint256 _tokenId, address _seller) public {
         uint256 numBids = bidders[_tokenId][_seller].length;
         bool found = false;
+        require(found, "No bid to withdraw for this sellers auction");
         for (uint256 i = 0; i < numBids; i++) {
             if (bidders[_tokenId][_seller][i].bidder == msg.sender) {
                 Bid memory withdrawnBid = bidders[_tokenId][_seller][i];                
@@ -104,15 +110,21 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
                 found = true;
                 break;
             }
-        }
-        require(found, "No bid to withdraw for this sellers auction");
+        } 
     }
 
-   function rejectBid(uint256 _tokenId, uint256 _bid) public {
+   function rejectBid(uint256 _tokenId, address _bidder) public {
         require(msg.sender == unlimitedAuctions[_tokenId][msg.sender].seller, "Only seller can reject a bid");
-        Bid memory rejectedBid = bidders[_tokenId][msg.sender][_bid];
-        payable(rejectedBid.bidder).transfer(rejectedBid.biddingPrice);
-        delete bidders[_tokenId][msg.sender][_bid];
+        Bid[] memory rejectedBid = bidders[_tokenId][msg.sender];
+        uint256 numBids = rejectedBid.length;
+        for (uint256 i = 0; i < numBids; i++) {
+            if (rejectedBid[i].bidder == _bidder) {
+                Bid memory selectedBid = rejectedBid[i];
+                payable(selectedBid.bidder).transfer(selectedBid.biddingPrice);
+                delete bidders[_tokenId][msg.sender][i];
+                break;
+            }
+        }
     }
 
     function withdrawAuction(uint256 _tokenId) public {
@@ -126,6 +138,7 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
     function startTimedAuction(uint256 _tokenId, uint256 _amount, uint256 _startingPrice, uint256 _auctionEndTime) public {
         require(_amount > 0 && _startingPrice > 0, "Amount and starting price must be greater than zero");
         require(balanceOf(msg.sender, _tokenId) >= _amount, "Insufficient balance");
+        require(_auctionEndTime > block.timestamp, "End time must be greater than current time");
         timedAuctions[_tokenId][msg.sender] = TimedAuction(msg.sender, _tokenId, _amount, _startingPrice, 0, address(0), block.timestamp, _auctionEndTime);
     }
 
