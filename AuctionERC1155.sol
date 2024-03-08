@@ -85,15 +85,9 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
                 Bid memory selectedBid = bids[i];
                 safeTransferFrom(auction.seller, selectedBid.bidder, _tokenId, auction.amount, "");
                 payable(auction.seller).transfer(selectedBid.biddingPrice);
-                for (uint256 j = 0; j < numBids; j++) {
-                    if (j != i) {
-                        Bid memory remainingBid = bids[j];
-                        payable(remainingBid.bidder).transfer(remainingBid.biddingPrice);
-                    }
-                }
-                delete bidders[_tokenId][msg.sender];
-                delete unlimitedAuctions[_tokenId][msg.sender];
-                break;
+            } else {
+                Bid memory remainingBid = bids[i];
+                payable(remainingBid.bidder).transfer(remainingBid.biddingPrice);
             }
         }
     }
@@ -101,7 +95,6 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
     function withdrawBid(uint256 _tokenId, address _seller) public {
         uint256 numBids = bidders[_tokenId][_seller].length;
         bool found = false;
-        require(found, "No bid to withdraw for this sellers auction");
         for (uint256 i = 0; i < numBids; i++) {
             if (bidders[_tokenId][_seller][i].bidder == msg.sender) {
                 Bid memory withdrawnBid = bidders[_tokenId][_seller][i];                
@@ -111,6 +104,7 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
                 break;
             }
         } 
+        require(found, "No bid to withdraw for this sellers auction");
     }
 
    function rejectBid(uint256 _tokenId, address _bidder) public {
