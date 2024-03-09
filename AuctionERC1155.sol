@@ -31,10 +31,10 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
     address private _admin;
     uint256 private _tokenIdCounter;
     mapping (string => bool) private _uris;
-    mapping (uint256 => address) private _creator;
     mapping (uint256 => mapping (address => Auction)) public unlimitedAuctions;
     mapping (uint256 => mapping (address => TimedAuction)) public timedAuctions;
     mapping (uint256 => mapping (address => Bid[])) public bidders; 
+    mapping (uint256 => mapping (address => mapping (address => bool))) public hasPlacedBid;
 
     constructor() ERC1155("") {
         _admin = msg.sender;
@@ -49,14 +49,7 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
         _mint(msg.sender, id, _amount, "");
         _setURI(id, _tokenURI);
         _uris[_tokenURI] = true;
-        _creator[id] = msg.sender;
     }
-
-    function mintToExisiting(uint256 _tokenId, uint256 _amount) public{
-       require(msg.sender == _creator[_tokenId], "You are not the orginal creator of this token");
-        require(_amount > 0, "Amount must be gerater than zero");
-        _mint(msg.sender, _tokenId, _amount, "");
-    } 
 
     function uri(uint256 tokenId) public view override(ERC1155URIStorage, ERC1155) returns (string memory) {
         return super.uri(tokenId);
@@ -73,11 +66,13 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
         require(msg.sender != unlimitedAuctions[_tokenId][_seller].seller, "Seller can not place bid");
         require(msg.value > unlimitedAuctions[_tokenId][_seller].startingPrice, "Bidding price must be greater than starting price");
         bidders[_tokenId][_seller].push(Bid(msg.sender, msg.value));
+        hasPlacedBid[_tokenId][_seller][msg.sender] = true;
     }
 
     function acceptBid(uint256 _tokenId, address _bidder) public {
         Auction memory auction = unlimitedAuctions[_tokenId][msg.sender];
         require(msg.sender == auction.seller, "Only seller can accept a bid");
+        require(hasPlacedBid[_tokenId][msg.sender][_bidder], "Bidder has not place a bid");
         Bid[] memory bids = bidders[_tokenId][msg.sender];
         uint256 numBids = bids.length;
         for (uint256 i = 0; i < numBids; i++) {
@@ -89,26 +84,27 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
                 Bid memory remainingBid = bids[i];
                 payable(remainingBid.bidder).transfer(remainingBid.biddingPrice);
             }
+            delete bidders[_tokenId][msg.sender];
+            delete unlimitedAuctions[_tokenId][msg.sender];
         }
     }
 
     function withdrawBid(uint256 _tokenId, address _seller) public {
+        require(hasPlacedBid[_tokenId][_seller][msg.sender], "You have not placed a bid for this auction");
         uint256 numBids = bidders[_tokenId][_seller].length;
-        bool found = false;
         for (uint256 i = 0; i < numBids; i++) {
             if (bidders[_tokenId][_seller][i].bidder == msg.sender) {
                 Bid memory withdrawnBid = bidders[_tokenId][_seller][i];                
                 payable(msg.sender).transfer(withdrawnBid.biddingPrice);                
                 delete bidders[_tokenId][_seller][i];
-                found = true;
                 break;
             }
         } 
-        require(found, "No bid to withdraw for this sellers auction");
     }
 
    function rejectBid(uint256 _tokenId, address _bidder) public {
         require(msg.sender == unlimitedAuctions[_tokenId][msg.sender].seller, "Only seller can reject a bid");
+        require(hasPlacedBid[_tokenId][msg.sender][_bidder], "Bidder has not place a bid");
         Bid[] memory rejectedBid = bidders[_tokenId][msg.sender];
         uint256 numBids = rejectedBid.length;
         for (uint256 i = 0; i < numBids; i++) {
