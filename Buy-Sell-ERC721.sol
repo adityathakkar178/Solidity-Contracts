@@ -80,4 +80,8 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         _adminCommission = 0;
         payable(_admin).transfer(commission);
     }
+
+    function supportsInterface(bytes4 _interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool){
+        return super.supportsInterface(_interfaceId);
+    }
 }
