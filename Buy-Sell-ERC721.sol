@@ -16,7 +16,7 @@ contract MyERC721 is ERC721, ERC721URIStorage{
         uint256 price;
     }
 
-address private _admin;
+    address private _admin;
     uint256 private _tokenIdCounter;
     uint256 private _adminCommission;
     uint256 private _commissionRate;
