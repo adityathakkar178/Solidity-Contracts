@@ -58,7 +58,7 @@ contract MyERC1155 is ERC1155, ERC1155URIStorage{
     // unlimited auction starts here
     function startUnlimitedAuction(uint256 _tokenId, uint256 _amount, uint256 _startingPrice) public {
         require(balanceOf(msg.sender, _tokenId) > 0, "Token Does not exists");
-        require(_amount > 0 && _startingPrice > 0, "Amount and starting price must be greate than zero");require(_amount > 0 && _startingPrice > 0, "Amount and starting price must be greate than zero");
+        require(_amount > 0 && _startingPrice > 0, "Amount and starting price must be greate than zero");
         require(balanceOf(msg.sender, _tokenId) >= _amount, "Insufficent balance");
         unlimitedAuctions[_tokenId][msg.sender] = Auction(msg.sender, _tokenId, _amount, _startingPrice, block.timestamp);
     }
